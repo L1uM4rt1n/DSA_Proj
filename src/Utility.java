@@ -109,23 +109,6 @@ public class Utility {
         return node;
     }
 
-    private void fillPixels(QuadtreeNode node, int[][][] pixels) {
-        if (node.children == null) {
-            int[] color = node.color;
-            for (int i = 0; i < 256; i++) {
-                for (int j = 0; j < 256; j++) {
-                    pixels[i][j] = color;
-                }
-            }
-        } else {
-            int halfSize = 256 / 2;
-            fillPixels(node.children[0], pixels, 0, 0, halfSize);
-            fillPixels(node.children[1], pixels, halfSize, 0, halfSize);
-            fillPixels(node.children[2], pixels, 0, halfSize, halfSize);
-            fillPixels(node.children[3], pixels, halfSize, halfSize, halfSize);
-        }
-    }
-
     private void fillPixels(QuadtreeNode node, int[][][] pixels, int x, int y, int size) {
         if (node.children == null) {
             int[] color = node.color;
