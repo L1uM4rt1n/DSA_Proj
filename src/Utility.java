@@ -6,11 +6,14 @@ public class Utility {
         // Initialize the output stream
         BitOutputStream bos = new BitOutputStream(new FileOutputStream(outputFileName));
 
-        // Compress the pixel values using quadtree compression
+        // write the dimensions of the image of dimension 1024x1024
+        bos.write(pixels.length, 10);
+        bos.write(pixels[0].length, 10);
+
+        // compress the pixel values using quadtree compression
         QuadtreeNode root = buildQuadtree(pixels);
         writeQuadtree(root, bos);
 
-        // Close the output stream
         bos.close();
     }
 
@@ -18,15 +21,24 @@ public class Utility {
         // Initialize the input stream
         BitInputStream bis = new BitInputStream(new FileInputStream(inputFileName));
 
-        // Decompress the pixel values using quadtree compression
-        QuadtreeNode root = readQuadtree(bis);
-        int[][][] pixels = new int[256][256][3];
-        fillPixels(root, pixels);
+        // read the dimensions of the image of dimension 1024x1024
+        int width = bis.read(10);
+        int height = bis.read(10);
 
-        // Close the input stream
+        // decompress the pixel values using quadtree compression
+        QuadtreeNode root = readQuadtree(bis);
+
+        // create and fill the pixels array in chunks
+        int chunkSize = 32; //adjusted to prevent going out of memory
+        int[][][] pixels = new int[width][height][3];
+        for (int i = 0; i < width; i += chunkSize) {
+            for (int j = 0; j < height; j += chunkSize) {
+                fillPixels(root, pixels, i, j, chunkSize);
+            }
+        }
+
         bis.close();
 
-        // Return the decompressed pixel array
         return pixels;
     }
 
@@ -36,8 +48,8 @@ public class Utility {
 
     private QuadtreeNode buildQuadtree(int[][][] pixels, int x, int y, int size) {
         QuadtreeNode node = new QuadtreeNode();
-        if (size == 1) {
-            node.color = pixels[x][y];
+        if (size <= 1000) {
+            node.color = averageColour(pixels, x, y, size);
         } else {
             int halfSize = size / 2;
             QuadtreeNode[] children = new QuadtreeNode[4];
@@ -48,6 +60,24 @@ public class Utility {
             node.children = children;
         }
         return node;
+    }
+
+    private int[] averageColour(int[][][] pixels, int x, int y, int size) {
+        int[] avgColour = new int[3];
+        int pixelCounter = 0;
+        for (int i = x; i < x + size; i++) {
+            for (int j = y; j < y + size; j++) {
+                avgColour[0] += pixels[i][j][0];
+                avgColour[1] += pixels[i][j][1];
+                avgColour[2] += pixels[i][j][2];
+                pixelCounter++;
+            }
+        }
+
+        avgColour[0] /= pixelCounter;
+        avgColour[1] /= pixelCounter;
+        avgColour[2] /= pixelCounter;
+        return avgColour;
     }
 
     private void writeQuadtree(QuadtreeNode node, BitOutputStream bos) throws IOException {
@@ -99,8 +129,8 @@ public class Utility {
     private void fillPixels(QuadtreeNode node, int[][][] pixels, int x, int y, int size) {
         if (node.children == null) {
             int[] color = node.color;
-            for (int i = x; i < x + size; i++) {
-                for (int j = y; j < y + size; j++) {
+            for (int i = x; i < Math.min(x + size, pixels.length); i++) {
+                for (int j = y; j < Math.min(y + size, pixels[i].length); j++) {
                     pixels[i][j] = color;
                 }
             }
