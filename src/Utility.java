@@ -1,4 +1,7 @@
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.IntStream;
 import java.awt.Color;
 
 public class Utility implements Serializable {
@@ -19,7 +22,8 @@ public class Utility implements Serializable {
     
     private Node buildQuadtree(int[][][] pixels, int x, int y, int width, int height, int threshold) {
         if (entropy(pixels, x, y, width, height) < threshold || width <= MIN_SZ || height <= MIN_SZ) {
-            int[] color = getAverageColor(pixels, x, y, width, height);
+            // int[] color = getAverageColor(pixels, x, y, width, height);
+            int[] color = medianCutColour(pixels, x, y, width, height);
             return new Node(color, null, x, y, width, height); // Create a leaf node with average color
         }
         // Recursive division into quadrants
@@ -35,32 +39,49 @@ public class Utility implements Serializable {
     
     private double entropy(int[][][] pixels, int x, int y, int width, int height) {
         double s = 0;
-        int[] avg = getAverageColor(pixels, x, y, width, height);
-        Color avgColor = new Color(avg[0], avg[1], avg[2]);
+        // int[] avg = getAverageColor(pixels, x, y, width, height);
+        // Color avgColor = new Color(avg[0], avg[1], avg[2]);
+        int[] median = medianCutColour(pixels, x, y, width, height);
+        Color medianColor = new Color(median[0], median[1], median[2]);
         for (int i = x; i < x + width; i++) {
             for (int j = y; j < y + height; j++) {
                 Color c = new Color(pixels[i][j][0], pixels[i][j][1], pixels[i][j][2]);
-                s += Math.abs(avgColor.getRed() - c.getRed());
-                s += Math.abs(avgColor.getGreen() - c.getGreen());
-                s += Math.abs(avgColor.getBlue() - c.getBlue());
+                s += Math.abs(medianColor.getRed() - c.getRed());
+                s += Math.abs(medianColor.getGreen() - c.getGreen());
+                s += Math.abs(medianColor.getBlue() - c.getBlue());
             }
         }
         return (double) s / (width * height); // Return the average color variation
     }
-    
 
-    private int[] getAverageColor(int[][][] pixels, int x, int y, int width, int height) {
-        int sumRed = 0, sumGreen = 0, sumBlue = 0, count = 0;
+    private int[] medianCutColour(int[][][] pixels, int x, int y, int width, int height) {
+        List<int[]> colors = new ArrayList<>();
         for (int i = x; i < x + width; i++) {
             for (int j = y; j < y + height; j++) {
-                sumRed += pixels[i][j][0];
-                sumGreen += pixels[i][j][1];
-                sumBlue += pixels[i][j][2];
-                count++;
+                colors.add(pixels[i][j]);
             }
         }
-        return new int[]{sumRed / count, sumGreen / count, sumBlue / count}; // Return the average RGB color
+        colors.sort((a, b) -> Integer.compare(intensity(a), intensity(b)));
+        int[] medianColor = colors.get(colors.size() / 2);
+        return medianColor;
     }
+    
+    private int intensity(int[] color) {
+        return color[0] + color[1] + color[2];
+    }
+
+    // private int[] getAverageColor(int[][][] pixels, int x, int y, int width, int height) {
+    //     int sumRed = 0, sumGreen = 0, sumBlue = 0, count = 0;
+    //     for (int i = x; i < x + width; i++) {
+    //         for (int j = y; j < y + height; j++) {
+    //             sumRed += pixels[i][j][0];
+    //             sumGreen += pixels[i][j][1];
+    //             sumBlue += pixels[i][j][2];
+    //             count++;
+    //         }
+    //     }
+    //     return new int[]{sumRed / count, sumGreen / count, sumBlue / count}; // Return the average RGB color
+    // }
     
 
    
