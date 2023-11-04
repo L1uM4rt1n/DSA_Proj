@@ -3,7 +3,7 @@ import java.awt.Color;
 
 public class Utility implements Serializable {
 
-    static int threshold = 15; // Default threshold value
+    static int threshold = 12; // Default threshold value
     static int MIN_SZ = 6; // Minimum size for quadtree division
 
     public void Compress(int[][][] pixels, String outputFileName, int threshold) throws IOException {
