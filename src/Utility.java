@@ -76,7 +76,6 @@ public class Utility implements Serializable {
             } else {
                 throw new IOException("Invalid object type in the input file");
             }
-            return result;
         }
     }
     
